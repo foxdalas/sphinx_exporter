@@ -1,0 +1,5 @@
+/.build
+/.release
+/.tarballs
+sphinx_exporter
+*.tar.gz
