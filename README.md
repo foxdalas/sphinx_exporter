@@ -140,4 +140,7 @@ sphinx_up 1
 # HELP sphinx_uptime Number of seconds since the server started.
 # TYPE sphinx_uptime gauge
 sphinx_uptime 92852
+# HELP sphinx_index_count Number of indexes.
+# TYPE sphinx_index_count counter
+sphinx_index_count 10
 ```

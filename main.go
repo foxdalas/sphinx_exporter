@@ -59,6 +59,16 @@ type Exporter struct {
 	qcache_cached_queries *prometheus.Desc
 	qcache_used_bytes     *prometheus.Desc
 	qcache_hits           *prometheus.Desc
+	index_count           *prometheus.Desc
+
+	indexed_documents  *prometheus.GaugeVec
+	indexed_bytes      *prometheus.GaugeVec
+	field_tokens_title *prometheus.GaugeVec
+	field_tokens_body  *prometheus.GaugeVec
+	total_tokens       *prometheus.GaugeVec
+	ram_bytes          *prometheus.GaugeVec
+	disk_bytes         *prometheus.GaugeVec
+	mem_limit          *prometheus.GaugeVec
 }
 
 func NewExporter(server string, port string, timeout time.Duration) *Exporter {
@@ -288,6 +298,68 @@ func NewExporter(server string, port string, timeout time.Duration) *Exporter {
 			nil,
 			nil,
 		),
+		index_count: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "index_count"),
+			"Number of indexes.",
+			nil,
+			nil,
+		),
+		indexed_documents: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "indexed_documents",
+			Help:      "Number of documents indexed",
+		},
+			[]string{"index"},
+		),
+		indexed_bytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "indexed_bytes",
+			Help:      "Indexed Bytes",
+		},
+			[]string{"index"},
+		),
+		field_tokens_title: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "field_tokens_title",
+			Help:      "Sums of per-field length titles over the entire index",
+		},
+			[]string{"index"},
+		),
+		field_tokens_body: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "field_tokens_body",
+			Help:      "Sums of per-field length bodies over the entire index",
+		},
+			[]string{"index"},
+		),
+		total_tokens: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "total_tokens",
+			Help:      "Total tokens",
+		},
+			[]string{"index"},
+		),
+		ram_bytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "ram_bytes",
+			Help:      "total size (in bytes) of the RAM-resident index portion",
+		},
+			[]string{"index"},
+		),
+		disk_bytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "disk_bytes",
+			Help:      "total size (in bytes) of the disk index",
+		},
+			[]string{"index"},
+		),
+		mem_limit: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "mem_limit",
+			Help:      "Memory limit",
+		},
+			[]string{"index"},
+		),
 	}
 }
 
@@ -329,6 +401,16 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.qcache_cached_queries
 	ch <- e.qcache_used_bytes
 	ch <- e.qcache_hits
+	ch <- e.index_count
+
+	e.indexed_documents.Describe(ch)
+	e.indexed_bytes.Describe(ch)
+	e.field_tokens_title.Describe(ch)
+	e.field_tokens_body.Describe(ch)
+	e.total_tokens.Describe(ch)
+	e.ram_bytes.Describe(ch)
+	e.disk_bytes.Describe(ch)
+	e.mem_limit.Describe(ch)
 }
 
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
@@ -435,6 +517,76 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		case k == "qcache_used_bytes":
 			ch <- prometheus.MustNewConstMetric(e.qcache_used_bytes, prometheus.CounterValue, parse(v))
 		}
+	}
+
+	//Collect Indexes
+	databases := make(map[string]string)
+
+	indexes, err := db.Query("SHOW TABLES")
+	if err != nil {
+		ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+		log.Errorf("Failed to collect stats from sphinx: %s", err)
+		return
+	}
+
+	for indexes.Next() {
+		var index string
+		var index_type string
+		err = indexes.Scan(&index, &index_type)
+		if err != nil {
+			ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+			log.Errorf("Failed to collect stats from sphinx: %s", err)
+			return
+		}
+		databases[index] = index_type
+	}
+	ch <- prometheus.MustNewConstMetric(e.index_count, prometheus.GaugeValue, float64(len(databases)))
+
+	//Collect metrics per index
+	for index, _ := range databases {
+		metrics, err := db.Query("SHOW INDEX " + index + " STATUS")
+		if err != nil {
+			ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+			log.Errorf("Failed to collect stats from sphinx: %s", err)
+			return
+		}
+
+		for metrics.Next() {
+			var metric string
+			var value string
+			err := metrics.Scan(&metric, &value)
+			if err != nil {
+				ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+				log.Errorf("Failed to collect stats from sphinx: %s", err)
+				return
+			}
+			switch {
+			case metric == "indexed_documents":
+				e.indexed_documents.WithLabelValues(index).Set(parse(value))
+			case metric == "indexed_bytes":
+				e.indexed_bytes.WithLabelValues(index).Set(parse(value))
+			case metric == "field_tokens_title":
+				e.field_tokens_title.WithLabelValues(index).Set(parse(value))
+			case metric == "field_tokens_body":
+				e.field_tokens_body.WithLabelValues(index).Set(parse(value))
+			case metric == "total_tokens":
+				e.total_tokens.WithLabelValues(index).Set(parse(value))
+			case metric == "ram_bytes":
+				e.ram_bytes.WithLabelValues(index).Set(parse(value))
+			case metric == "disk_bytes":
+				e.disk_bytes.WithLabelValues(index).Set(parse(value))
+			case metric == "mem_limit":
+				e.mem_limit.WithLabelValues(index).Set(parse(value))
+			}
+		}
+		e.indexed_documents.Collect(ch)
+		e.indexed_bytes.Collect(ch)
+		e.field_tokens_title.Collect(ch)
+		e.field_tokens_body.Collect(ch)
+		e.total_tokens.Collect(ch)
+		e.ram_bytes.Collect(ch)
+		e.disk_bytes.Collect(ch)
+		e.mem_limit.Collect(ch)
 	}
 }
 
