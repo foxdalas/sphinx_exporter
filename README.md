@@ -12,7 +12,7 @@ The sphinx exporter exports metrics from a sphinx server for
 consumption by prometheus. The server is specified as `--sphinx.address` and `--sphinx.port` flag
 to the program (default is `localhost:9306`).
 
-By default the memcache\_exporter serves on port `0.0.0.0:9247` at `/metrics`
+By default the sphinx\_exporter serves on port `0.0.0.0:9247` at `/metrics`
 
 ```
 make
