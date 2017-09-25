@@ -64,7 +64,6 @@ type Exporter struct {
 	qcache_used_bytes     *prometheus.Desc
 	qcache_hits           *prometheus.Desc
 	index_count           *prometheus.Desc
-
 	indexed_documents  *prometheus.Desc
 	indexed_bytes      *prometheus.Desc
 	field_tokens_title *prometheus.Desc
@@ -73,6 +72,7 @@ type Exporter struct {
 	ram_bytes          *prometheus.Desc
 	disk_bytes         *prometheus.Desc
 	mem_limit          *prometheus.Desc
+  threads_count      *prometheus.Desc
 }
 
 func NewExporter(server string, port string, timeout time.Duration) *Exporter {
@@ -356,6 +356,12 @@ func NewExporter(server string, port string, timeout time.Duration) *Exporter {
 			labels,
 			nil,
 		),
+    threads_count: prometheus.NewDesc(
+      prometheus.BuildFQName(namespace, "", "threads_count"),
+      "Number of threads",
+      []string{"state"},
+      nil,
+    ),
 	}
 }
 
@@ -406,6 +412,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.ram_bytes
 	ch <- e.disk_bytes
 	ch <- e.mem_limit
+	ch <- e.threads_count
 }
 
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
@@ -575,6 +582,35 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			}
 		}
 	}
+
+  threads_rows, err := db.Query("SHOW THREADS")
+  if err != nil {
+    ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+    log.Errorf("Failed to collect stats from sphinx: %s", err)
+    return
+  }
+  
+	threads := make(map[string][]string)
+
+	for threads_rows.Next() {
+		var tid string
+		var proto string
+		var state string
+		var time string
+		var info string
+		err := threads_rows.Scan(&tid, &proto, &state, &time, &info)
+		if err != nil {
+			ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+			log.Errorf("Failed to collect stats from sphinx: %s", err)
+			return
+		}
+		threads[state] = append(threads[state], tid)
+	}	
+
+  for threads_state, threads_times := range threads {
+     ch <- prometheus.MustNewConstMetric(e.threads_count, prometheus.CounterValue, float64(len(threads_times)), threads_state)
+  }
+
 }
 
 func parse(stat string) float64 {

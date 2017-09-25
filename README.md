@@ -143,4 +143,8 @@ sphinx_uptime 92852
 # HELP sphinx_index_count Number of indexes.
 # TYPE sphinx_index_count counter
 sphinx_index_count 10
+# HELP sphinx_threads_count Number of threads
+# TYPE sphinx_threads_count counter
+sphinx_threads_count{state="net_idle"} 7
+sphinx_threads_count{state="query"} 1
 ```
