@@ -18,6 +18,10 @@ const (
 	namespace = "sphinx"
 )
 
+var (
+	labels = []string{"index"}
+)
+
 // Exporter collects metrics from a searchd server.
 type Exporter struct {
 	sphinx string
@@ -61,14 +65,14 @@ type Exporter struct {
 	qcache_hits           *prometheus.Desc
 	index_count           *prometheus.Desc
 
-	indexed_documents  *prometheus.GaugeVec
-	indexed_bytes      *prometheus.GaugeVec
-	field_tokens_title *prometheus.GaugeVec
-	field_tokens_body  *prometheus.GaugeVec
-	total_tokens       *prometheus.GaugeVec
-	ram_bytes          *prometheus.GaugeVec
-	disk_bytes         *prometheus.GaugeVec
-	mem_limit          *prometheus.GaugeVec
+	indexed_documents  *prometheus.Desc
+	indexed_bytes      *prometheus.Desc
+	field_tokens_title *prometheus.Desc
+	field_tokens_body  *prometheus.Desc
+	total_tokens       *prometheus.Desc
+	ram_bytes          *prometheus.Desc
+	disk_bytes         *prometheus.Desc
+	mem_limit          *prometheus.Desc
 }
 
 func NewExporter(server string, port string, timeout time.Duration) *Exporter {
@@ -304,61 +308,53 @@ func NewExporter(server string, port string, timeout time.Duration) *Exporter {
 			nil,
 			nil,
 		),
-		indexed_documents: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "indexed_documents",
-			Help:      "Number of documents indexed",
-		},
-			[]string{"index"},
+		indexed_documents: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "indexed_documents"),
+			"Number of documents indexed",
+			labels,
+			nil,
 		),
-		indexed_bytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "indexed_bytes",
-			Help:      "Indexed Bytes",
-		},
-			[]string{"index"},
+		indexed_bytes: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "indexed_bytes"),
+			"Indexed Bytes",
+			labels,
+			nil,
 		),
-		field_tokens_title: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "field_tokens_title",
-			Help:      "Sums of per-field length titles over the entire index",
-		},
-			[]string{"index"},
+		field_tokens_title: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "field_tokens_title"),
+			"Sums of per-field length titles over the entire index",
+			labels,
+			nil,
 		),
-		field_tokens_body: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "field_tokens_body",
-			Help:      "Sums of per-field length bodies over the entire index",
-		},
-			[]string{"index"},
+		field_tokens_body: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "field_tokens_body"),
+			"Sums of per-field length bodies over the entire index",
+			labels,
+			nil,
 		),
-		total_tokens: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "total_tokens",
-			Help:      "Total tokens",
-		},
-			[]string{"index"},
+		total_tokens: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "total_tokens"),
+			"Total tokens",
+			labels,
+			nil,
 		),
-		ram_bytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "ram_bytes",
-			Help:      "total size (in bytes) of the RAM-resident index portion",
-		},
-			[]string{"index"},
+		ram_bytes: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "ram_bytes"),
+			"total size (in bytes) of the RAM-resident index portion",
+			labels,
+			nil,
 		),
-		disk_bytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "disk_bytes",
-			Help:      "total size (in bytes) of the disk index",
-		},
-			[]string{"index"},
+		disk_bytes: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "disk_bytes"),
+			"total size (in bytes) of the disk index",
+			labels,
+			nil,
 		),
-		mem_limit: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Name:      "mem_limit",
-			Help:      "Memory limit",
-		},
-			[]string{"index"},
+		mem_limit: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "mem_limit"),
+			"Memory limit",
+			labels,
+			nil,
 		),
 	}
 }
@@ -402,15 +398,14 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- e.qcache_used_bytes
 	ch <- e.qcache_hits
 	ch <- e.index_count
-
-	e.indexed_documents.Describe(ch)
-	e.indexed_bytes.Describe(ch)
-	e.field_tokens_title.Describe(ch)
-	e.field_tokens_body.Describe(ch)
-	e.total_tokens.Describe(ch)
-	e.ram_bytes.Describe(ch)
-	e.disk_bytes.Describe(ch)
-	e.mem_limit.Describe(ch)
+	ch <- e.indexed_documents
+	ch <- e.indexed_bytes
+	ch <- e.field_tokens_title
+	ch <- e.field_tokens_body
+	ch <- e.total_tokens
+	ch <- e.ram_bytes
+	ch <- e.disk_bytes
+	ch <- e.mem_limit
 }
 
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
@@ -562,31 +557,23 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			}
 			switch {
 			case metric == "indexed_documents":
-				e.indexed_documents.WithLabelValues(index).Set(parse(value))
+				ch <- prometheus.MustNewConstMetric(e.indexed_documents, prometheus.CounterValue, parse(value), index)
 			case metric == "indexed_bytes":
-				e.indexed_bytes.WithLabelValues(index).Set(parse(value))
+				ch <- prometheus.MustNewConstMetric(e.indexed_bytes, prometheus.CounterValue, parse(value), index)
 			case metric == "field_tokens_title":
-				e.field_tokens_title.WithLabelValues(index).Set(parse(value))
+				ch <- prometheus.MustNewConstMetric(e.field_tokens_title, prometheus.CounterValue, parse(value), index)
 			case metric == "field_tokens_body":
-				e.field_tokens_body.WithLabelValues(index).Set(parse(value))
+				ch <- prometheus.MustNewConstMetric(e.field_tokens_body, prometheus.CounterValue, parse(value), index)
 			case metric == "total_tokens":
-				e.total_tokens.WithLabelValues(index).Set(parse(value))
+				ch <- prometheus.MustNewConstMetric(e.total_tokens, prometheus.CounterValue, parse(value), index)
 			case metric == "ram_bytes":
-				e.ram_bytes.WithLabelValues(index).Set(parse(value))
+				ch <- prometheus.MustNewConstMetric(e.ram_bytes, prometheus.CounterValue, parse(value), index)
 			case metric == "disk_bytes":
-				e.disk_bytes.WithLabelValues(index).Set(parse(value))
+				ch <- prometheus.MustNewConstMetric(e.disk_bytes, prometheus.CounterValue, parse(value), index)
 			case metric == "mem_limit":
-				e.mem_limit.WithLabelValues(index).Set(parse(value))
+				ch <- prometheus.MustNewConstMetric(e.mem_limit, prometheus.CounterValue, parse(value), index)
 			}
 		}
-		e.indexed_documents.Collect(ch)
-		e.indexed_bytes.Collect(ch)
-		e.field_tokens_title.Collect(ch)
-		e.field_tokens_body.Collect(ch)
-		e.total_tokens.Collect(ch)
-		e.ram_bytes.Collect(ch)
-		e.disk_bytes.Collect(ch)
-		e.mem_limit.Collect(ch)
 	}
 }
 
