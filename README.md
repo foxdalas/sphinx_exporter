@@ -5,6 +5,9 @@
 
 A [sphinx](http://sphinxsearch.com) exporter for prometheus.
 
+## Grafana Dashboards
+
+* [Sphinx Overview](https://github.com/foxdalas/sphinx_exporter/blob/master/grafana_dashboard/Sphinx_Overview.json)
 
 ## Building
 
