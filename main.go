@@ -64,15 +64,15 @@ type Exporter struct {
 	qcache_used_bytes     *prometheus.Desc
 	qcache_hits           *prometheus.Desc
 	index_count           *prometheus.Desc
-	indexed_documents  *prometheus.Desc
-	indexed_bytes      *prometheus.Desc
-	field_tokens_title *prometheus.Desc
-	field_tokens_body  *prometheus.Desc
-	total_tokens       *prometheus.Desc
-	ram_bytes          *prometheus.Desc
-	disk_bytes         *prometheus.Desc
-	mem_limit          *prometheus.Desc
-  threads_count      *prometheus.Desc
+	indexed_documents     *prometheus.Desc
+	indexed_bytes         *prometheus.Desc
+	field_tokens_title    *prometheus.Desc
+	field_tokens_body     *prometheus.Desc
+	total_tokens          *prometheus.Desc
+	ram_bytes             *prometheus.Desc
+	disk_bytes            *prometheus.Desc
+	mem_limit             *prometheus.Desc
+	threads_count         *prometheus.Desc
 }
 
 func NewExporter(server string, port string, timeout time.Duration) *Exporter {
@@ -356,12 +356,12 @@ func NewExporter(server string, port string, timeout time.Duration) *Exporter {
 			labels,
 			nil,
 		),
-    threads_count: prometheus.NewDesc(
-      prometheus.BuildFQName(namespace, "", "threads_count"),
-      "Number of threads",
-      []string{"state"},
-      nil,
-    ),
+		threads_count: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "", "threads_count"),
+			"Number of threads",
+			[]string{"state"},
+			nil,
+		),
 	}
 }
 
@@ -416,17 +416,18 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
+	status := 1
+
 	db, err := sql.Open("mysql", e.sphinx)
 	if err != nil {
-		ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+		status = 0
 		log.Errorf("Failed to collect stats from sphinx: %s", err)
 		return
 	}
-	ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 1)
 
 	rows, err := db.Query("SHOW STATUS")
 	if err != nil {
-		ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+		status = 0
 		log.Errorf("Failed to collect stats from sphinx: %s", err)
 		return
 	}
@@ -437,7 +438,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		var counter string
 		err = rows.Scan(&metric, &counter)
 		if err != nil {
-			ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+			status = 0
 			log.Errorf("Failed to collect stats from sphinx: %s", err)
 			return
 		}
@@ -526,7 +527,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	indexes, err := db.Query("SHOW TABLES")
 	if err != nil {
-		ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+		status = 0
 		log.Errorf("Failed to collect stats from sphinx: %s", err)
 		return
 	}
@@ -536,7 +537,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		var index_type string
 		err = indexes.Scan(&index, &index_type)
 		if err != nil {
-			ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+			status = 0
 			log.Errorf("Failed to collect stats from sphinx: %s", err)
 			return
 		}
@@ -548,7 +549,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	for index, _ := range databases {
 		metrics, err := db.Query("SHOW INDEX " + index + " STATUS")
 		if err != nil {
-			ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+			status = 0
 			log.Errorf("Failed to collect stats from sphinx: %s", err)
 			return
 		}
@@ -558,7 +559,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			var value string
 			err := metrics.Scan(&metric, &value)
 			if err != nil {
-				ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+				status = 0
 				log.Errorf("Failed to collect stats from sphinx: %s", err)
 				return
 			}
@@ -583,13 +584,13 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		}
 	}
 
-  threads_rows, err := db.Query("SHOW THREADS")
-  if err != nil {
-    ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
-    log.Errorf("Failed to collect stats from sphinx: %s", err)
-    return
-  }
-  
+	threads_rows, err := db.Query("SHOW THREADS")
+	if err != nil {
+		status = 0
+		log.Errorf("Failed to collect stats from sphinx: %s", err)
+		return
+	}
+
 	threads := make(map[string][]string)
 
 	for threads_rows.Next() {
@@ -600,17 +601,19 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		var info string
 		err := threads_rows.Scan(&tid, &proto, &state, &time, &info)
 		if err != nil {
-			ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
+			status = 0
 			log.Errorf("Failed to collect stats from sphinx: %s", err)
 			return
 		}
 		threads[state] = append(threads[state], tid)
-	}	
+	}
 
-  for threads_state, threads_times := range threads {
-     ch <- prometheus.MustNewConstMetric(e.threads_count, prometheus.CounterValue, float64(len(threads_times)), threads_state)
-  }
+	for threads_state, threads_times := range threads {
+		ch <- prometheus.MustNewConstMetric(e.threads_count, prometheus.CounterValue, float64(len(threads_times)), threads_state)
+	}
 
+	ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, float64(status))
+	db.Close()
 }
 
 func parse(stat string) float64 {
