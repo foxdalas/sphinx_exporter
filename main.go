@@ -202,19 +202,19 @@ func NewExporter(server string, port string, timeout time.Duration) *Exporter {
 		),
 		query_reads: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "query_reads"),
-			"Number of query_reads since server start.",
+			"Total number of read operations since server start.",
 			nil,
 			nil,
 		),
 		query_readkb: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "query_readkb"),
-			"Number of query_readkb since server start.",
+			"Total number of KB read since server start.",
 			nil,
 			nil,
 		),
 		query_readtime: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "query_readtime"),
-			"Number of query_readtime since server start.",
+			"Total time spent doing read operations (in seconds) since server start.",
 			nil,
 			nil,
 		),
@@ -316,7 +316,7 @@ func NewExporter(server string, port string, timeout time.Duration) *Exporter {
 		),
 		indexed_bytes: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "indexed_bytes"),
-			"Indexed Bytes",
+			"Size (in bytes) of indexed documents",
 			labels,
 			nil,
 		),
@@ -340,13 +340,13 @@ func NewExporter(server string, port string, timeout time.Duration) *Exporter {
 		),
 		ram_bytes: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "ram_bytes"),
-			"total size (in bytes) of the RAM-resident index portion",
+			"Total size (in bytes) of the RAM-resident index portion",
 			labels,
 			nil,
 		),
 		disk_bytes: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "disk_bytes"),
-			"total size (in bytes) of the disk index",
+			"Total size (in bytes) of indexes on disk",
 			labels,
 			nil,
 		),
@@ -485,11 +485,11 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		case k == "dist_wait":
 			ch <- prometheus.MustNewConstMetric(e.dist_wait, prometheus.CounterValue, parse(v))
 		case k == "query_reads":
-			ch <- prometheus.MustNewConstMetric(e.query_reads, prometheus.GaugeValue, parse(v))
+			ch <- prometheus.MustNewConstMetric(e.query_reads, prometheus.CounterValue, parse(v))
 		case k == "query_readkb":
-			ch <- prometheus.MustNewConstMetric(e.query_readkb, prometheus.GaugeValue, parse(v))
+			ch <- prometheus.MustNewConstMetric(e.query_readkb, prometheus.CounterValue, parse(v))
 		case k == "query_readtime":
-			ch <- prometheus.MustNewConstMetric(e.query_readtime, prometheus.GaugeValue, parse(v))
+			ch <- prometheus.MustNewConstMetric(e.query_readtime, prometheus.CounterValue, parse(v))
 		case k == "avg_query_wall":
 			ch <- prometheus.MustNewConstMetric(e.avg_query_wall, prometheus.CounterValue, parse(v))
 		case k == "avg_query_cpu":
