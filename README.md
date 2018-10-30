@@ -126,13 +126,13 @@ sphinx_queries 802
 # TYPE sphinx_query_cpu gauge
 sphinx_query_cpu 0
 # HELP sphinx_query_readkb Number of query_readkb since server start.
-# TYPE sphinx_query_readkb gauge
+# TYPE sphinx_query_readkb counter
 sphinx_query_readkb 0
-# HELP sphinx_query_reads Number of query_reads since server start.
-# TYPE sphinx_query_reads gauge
+# HELP sphinx_query_reads Total number of KB read since server start.
+# TYPE sphinx_query_reads counter
 sphinx_query_reads 0
-# HELP sphinx_query_readtime Number of query_readtime since server start.
-# TYPE sphinx_query_readtime gauge
+# HELP sphinx_query_readtime Total time spent doing read operations (in seconds) since server start.
+# TYPE sphinx_query_readtime counter
 sphinx_query_readtime 0
 # HELP sphinx_query_wall Number of query_wall since server start.
 # TYPE sphinx_query_wall counter
