@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -635,9 +636,7 @@ func parse(stat string) float64 {
 }
 
 func printerror(e *Exporter, err error, ch chan<- prometheus.Metric) {
-	status := 0
-	printerror(e, err, ch)
-	ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, float64(status))
+	ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
 	return
 }
 
@@ -660,7 +659,7 @@ func main() {
 
 	prometheus.MustRegister(NewExporter(*address, *port, *timeout))
 
-	http.Handle(*metricsPath, prometheus.Handler())
+	http.Handle(*metricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
       <head><title>Sphinx Exporter</title></head>
