@@ -421,7 +421,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	db, err := sql.Open("mysql", e.sphinx)
 	if err != nil {
-		printerror(e, err, ch)
+		log.Error(err)
 		return
 	}
 	// will close DB connection while return
@@ -429,7 +429,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	rows, err := db.Query("SHOW STATUS")
 	if err != nil {
-		printerror(e, err, ch)
+		log.Error(err)
 		return
 	}
 	variables := make(map[string]string)
@@ -439,7 +439,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		var counter string
 		err = rows.Scan(&metric, &counter)
 		if err != nil {
-			printerror(e, err, ch)
+			log.Error(err)
 			return
 		}
 		variables[metric] = counter
@@ -527,7 +527,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	indexes, err := db.Query("SHOW TABLES")
 	if err != nil {
-		printerror(e, err, ch)
+		log.Error(err)
 		return
 	}
 
@@ -536,7 +536,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		var index_type string
 		err = indexes.Scan(&index, &index_type)
 		if err != nil {
-			printerror(e, err, ch)
+			log.Error(err)
 			return
 		}
 		databases[index] = index_type
@@ -553,7 +553,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		}
 		metrics, err := db.Query("SHOW INDEX " + index + " STATUS")
 		if err != nil {
-			printerror(e, err, ch)
+			log.Error(err)
 			return
 		}
 
@@ -562,7 +562,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			var value string
 			err := metrics.Scan(&metric, &value)
 			if err != nil {
-				printerror(e, err, ch)
+				log.Error(err)
 				return
 			}
 			switch {
@@ -588,7 +588,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	threads_rows, err := db.Query("SHOW THREADS")
 	if err != nil {
-		printerror(e, err, ch)
+		log.Error(err)
 		return
 	}
 
@@ -602,7 +602,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		var info string
 		err := threads_rows.Scan(&tid, &proto, &state, &time, &info)
 		if err != nil {
-			printerror(e, err, ch)
+			log.Error(err)
 			return
 		}
 		threads[state] = append(threads[state], tid)
@@ -633,11 +633,6 @@ func parse(stat string) float64 {
 		v = math.NaN()
 	}
 	return v
-}
-
-func printerror(e *Exporter, err error, ch chan<- prometheus.Metric) {
-	ch <- prometheus.MustNewConstMetric(e.up, prometheus.GaugeValue, 0)
-	return
 }
 
 func main() {
