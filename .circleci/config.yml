@@ -17,7 +17,7 @@ jobs:
 
   docker_hub_master:
     docker:
-    - image: circleci/golang:1.11
+    - image: circleci/golang:1.13
     working_directory: /go/src/github.com/foxdalas/sphinx_exporter
 
     environment:
@@ -40,7 +40,7 @@ jobs:
 
   docker_hub_release_tags:
     docker:
-    - image: circleci/golang:1.11
+    - image: circleci/golang:1.13
     working_directory: /go/src/github.com/foxdalas/sphinx_exporter
 
     environment:
