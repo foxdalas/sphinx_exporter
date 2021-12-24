@@ -522,7 +522,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 		}
 	}
 
-	//Collect Indexes
+	// Collect Indexes
 	databases := make(map[string]string)
 
 	indexes, err := db.Query("SHOW TABLES")
@@ -543,9 +543,8 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	}
 	ch <- prometheus.MustNewConstMetric(e.index_count, prometheus.GaugeValue, float64(len(databases)))
 
-	//Collect metrics per index
+	// Collect metrics per index
 	for index, _ := range databases {
-
 		// Distributed indexes has no index status
 
 		if databases[index] == "distributed" {
@@ -595,12 +594,15 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	threads := make(map[string][]string)
 
 	for threads_rows.Next() {
-		var tid string
-		var proto string
-		var state string
-		var time string
-		var info string
-		err := threads_rows.Scan(&tid, &proto, &state, &time, &info)
+		var (
+			tid, name, proto, state, host, connID, time, workTime, workTimeCPU,
+			thdEfficiency, jobsDone, lastJobTook, inIdle, info string
+		)
+
+		err = threads_rows.Scan(
+			&tid, &name, &proto, &state, &host, &connID, &time, &workTime, &workTimeCPU,
+			&thdEfficiency, &jobsDone, &lastJobTook, &inIdle, &info,
+		)
 		if err != nil {
 			log.Error(err)
 			return
