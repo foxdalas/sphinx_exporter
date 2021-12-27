@@ -10,16 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-
-      - name: Set up Go
-        uses: actions/setup-go@v2
         with:
-          go-version: 1.17
-
-      - name: Go mod download
-        run: go mod download
-
-      - name: Release Proxy
+          fetch-depth: 0
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Release sphinx-exporter
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest

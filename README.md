@@ -1,13 +1,20 @@
 # Sphinx Exporter for Prometheus [![CircleCI](https://circleci.com/gh/foxdalas/sphinx_exporter.svg?style=svg)](https://circleci.com/gh/foxdalas/sphinx_exporter)
 
-[![Docker Repository on Quay](https://quay.io/repository/foxdalas/sphinx-exporter/status "Docker Repository on Quay")](https://quay.io/repository/foxdalas/sphinx-exporter)
-[![Docker Pulls](https://img.shields.io/docker/pulls/foxdalas/sphinx-exporter.svg?maxAge=604800)](https://hub.docker.com/r/foxdalas/sphinx-exporter/)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/foxdalas/sphinx_exporter/build-and-test/master?style=for-the-badge)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/foxdalas/sphinx_exporter?style=for-the-badge)
+![Docker Pulls](https://img.shields.io/docker/pulls/foxdalas/sphinx-exporter?style=for-the-badge)
 
 A [sphinx](http://sphinxsearch.com) exporter for prometheus.
 
 ## Grafana Dashboards
 
 * [Sphinx Overview](https://github.com/foxdalas/sphinx_exporter/blob/master/grafana_dashboard/Sphinx_Overview.json)
+
+## Install
+### Docker
+```
+docker pull foxdalas/sphinx-exporter:0.1.0
+```
 
 ## Building
 

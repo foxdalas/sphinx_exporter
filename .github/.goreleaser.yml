@@ -13,23 +13,28 @@ builds:
       - amd64
       - arm64
 dockers:
-  - image_templates:
-      - "foxdalas/sphinx-exporter:{{ .Version }}-amd64"
-    use: buildx
-    dockerfile: Dockerfile
+  - id: sphinx-exporter-docker-amd64
+    goos: linux
+    goarch: amd64
+    ids:
+      - sphinx-exporter
+    image_templates:
+      - "foxdalas/sphinx-exporter:v{{ .Version }}-amd64"
     build_flag_templates:
       - "--platform=linux/amd64"
-  - image_templates:
-      - "foxdalas/sphinx-exporter:{{ .Version }}-arm64v8"
     use: buildx
+  - id: sphinx-exporter-docker-arm64
+    goos: linux
     goarch: arm64
-    dockerfile: Dockerfile
-    build_flag_templates:
-      - "--platform=linux/arm64/v8"
-docker_manifests:
-  - id: sphinx-exporter
-    name_template: foxdalas/sphinx-exporter:{{ .Version }}
+    ids:
+      - sphinx-exporter
     image_templates:
-      - foxdalas/sphinx-exporter:{{ .Version }}-amd64
-      - foxdalas/sphinx-exporter:{{ .Version }}-arm64v8
-    use: docker
+      - "foxdalas/sphinx-exporter:v{{ .Version }}-arm64"
+    build_flag_templates:
+      - "--platform=linux/arm64"
+    use: buildx
+docker_manifests:
+  - name_template: foxdalas/sphinx-exporter:v{{ .Version }}
+    image_templates:
+      - foxdalas/sphinx-exporter:v{{ .Version }}-amd64
+      - foxdalas/sphinx-exporter:v{{ .Version }}-arm64
