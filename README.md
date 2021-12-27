@@ -13,7 +13,7 @@ A [sphinx](http://sphinxsearch.com) exporter for prometheus.
 ## Install
 ### Docker
 ```
-docker pull foxdalas/sphinx-exporter:0.1.0
+docker pull foxdalas/sphinx-exporter:v0.1.0
 ```
 
 ## Building
