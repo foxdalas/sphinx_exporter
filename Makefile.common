@@ -25,19 +25,17 @@
 # Ensure GOBIN is not set during build so that promu is installed to the correct path
 unexport GOBIN
 
-GO           ?= go
-GOFMT        ?= $(GO)fmt
-FIRST_GOPATH := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
-PROMU        := $(FIRST_GOPATH)/bin/promu
-STATICCHECK  := $(FIRST_GOPATH)/bin/staticcheck
-GOVENDOR     := $(FIRST_GOPATH)/bin/govendor
+GO            ?= go
+GOFMT         ?= $(GO)fmt
+FIRST_GOPATH  := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
+GOLANGCI-LINT := $(FIRST_GOPATH)/bin/golangci-lint
 pkgs          = ./...
 
 PREFIX                  ?= $(shell pwd)
 BIN_DIR                 ?= $(shell pwd)
 DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
 
-all: style staticcheck unused build test
+all: style golangci-lint build test docker
 
 style:
 	@echo ">> checking code style"
@@ -65,36 +63,18 @@ format:
 	@echo ">> formatting code"
 	$(GO) fmt $(pkgs)
 
-vet:
-	@echo ">> vetting code"
-	$(GO) vet $(pkgs)
+golangci-lint: $(GOLANGCI-LINT)
+	@echo ">> running linters"
+	$(GOLANGCI-LINT) run .
 
-staticcheck: $(STATICCHECK)
-	@echo ">> running staticcheck"
-	$(STATICCHECK) $(pkgs)
-
-unused: $(GOVENDOR)
-	@echo ">> running check for unused packages"
-	@$(GOVENDOR) list +unused | grep . && exit 1 || echo 'No unused packages'
-
-build: promu
+build:
 	@echo ">> building binaries"
-	$(PROMU) build --prefix $(PREFIX)
+	$(GO) build -o sphinx-exporter .
 
-tarball: promu
-	@echo ">> building release tarball"
-	$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
+docker: build
+	docker build -t "$(DOCKER_IMAGE_NAME):latest" .
 
-docker:
-	docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
+$(FIRST_GOPATH)/bin/golangci-lint:
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(FIRST_GOPATH)/bin v1.43.0
 
-promu:
-	GOOS= GOARCH= $(GO) get -u github.com/prometheus/promu
-
-$(FIRST_GOPATH)/bin/staticcheck:
-	GOOS= GOARCH= $(GO) get -u honnef.co/go/tools/cmd/staticcheck
-
-$(FIRST_GOPATH)/bin/govendor:
-	GOOS= GOARCH= $(GO) get -u github.com/kardianos/govendor
-
-.PHONY: all style check_license format build test vet assets tarball docker promu staticcheck $(FIRST_GOPATH)/bin/staticcheck govendor $(FIRST_GOPATH)/bin/govendor
+.PHONY: all style check_license format build test assets docker $(FIRST_GOPATH)/bin/golangci-lint

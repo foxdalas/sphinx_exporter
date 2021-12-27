@@ -1,4 +1,4 @@
-# Sphinx Exporter for Prometheus [![CircleCI](https://circleci.com/gh/foxdalas/sphinx_exporter.svg?style=svg)](https://circleci.com/gh/foxdalas/sphinx_exporter)
+# Sphinx Exporter for Prometheus
 
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/foxdalas/sphinx_exporter/build-and-test/master?style=for-the-badge)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/foxdalas/sphinx_exporter?style=for-the-badge)
@@ -12,8 +12,13 @@ A [sphinx](http://sphinxsearch.com) exporter for prometheus.
 
 ## Install
 ### Docker
+#### Specific version
 ```
 docker pull foxdalas/sphinx-exporter:v0.1.0
+```
+#### latest version
+```
+docker pull foxdalas/sphinx-exporter:latest
 ```
 
 ## Building
@@ -25,15 +30,19 @@ to the program (default is `localhost:9306`).
 By default the sphinx\_exporter serves on port `0.0.0.0:9247` at `/metrics`
 
 ```
-make
+make build
 ./sphinx_exporter
 ```
 
 Alternatively a Dockerfile is supplied
 
 ```
-docker build -t sphinx_exporter .
-docker run sphinx_exporter
+make docker
+```
+OR
+```
+go build -o sphinx_exporter .
+docker build -t foxdalas/sphinx-exporter:latest .
 ```
 
 ## Collectors
