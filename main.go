@@ -544,6 +544,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(e.index_count, prometheus.GaugeValue, float64(len(databases)))
 
 	// Collect metrics per index
+	// nolint
 	for index, _ := range databases {
 		// Distributed indexes has no index status
 
@@ -658,13 +659,16 @@ func main() {
 
 	http.Handle(*metricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
+		_, err := w.Write([]byte(`<html>
       <head><title>Sphinx Exporter</title></head>
       <body>
       <h1>Sphinx Exporter</h1>
       <p><a href='` + *metricsPath + `'>Metrics</a></p>
       </body>
       </html>`))
+		if err != nil {
+			log.Error(err)
+		}
 	})
 	log.Infoln("Starting HTTP server on", *listenAddress)
 	log.Fatal(http.ListenAndServe(*listenAddress, nil))

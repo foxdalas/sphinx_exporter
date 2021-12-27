@@ -1,5 +1,5 @@
-FROM        quay.io/prometheus/busybox:latest
-MAINTAINER  The Prometheus Authors <prometheus-developers@googlegroups.com>
+FROM       alpine:3.15
+MAINTAINER Maxim Pogozhiy <foxdalas@gmail.com>
 
 COPY sphinx_exporter /bin/sphinx_exporter
 
