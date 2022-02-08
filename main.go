@@ -2,16 +2,18 @@ package main
 
 import (
 	"database/sql"
+	"github.com/Masterminds/semver"
+	"github.com/prometheus/common/version"
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
-	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -25,7 +27,8 @@ var (
 
 // Exporter collects metrics from a searchd server.
 type Exporter struct {
-	sphinx string
+	sphinx  string
+	version *semver.Version
 
 	up                    *prometheus.Desc
 	uptime                *prometheus.Desc
@@ -79,8 +82,36 @@ type Exporter struct {
 func NewExporter(server string, port string, timeout time.Duration) *Exporter {
 	c := "@tcp(" + server + ":" + port + ")/"
 
+	db, err := sql.Open("mysql", c)
+	if err != nil {
+		log.Error(err)
+	}
+	defer db.Close()
+
+	rows, err := db.Query("show variables")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	variables := make(map[string]string)
+
+	for rows.Next() {
+		var variableName, variableValue string
+		err = rows.Scan(&variableName, &variableValue)
+		if err != nil {
+			log.Error(err)
+		}
+		variables[variableName] = variableValue
+	}
+
+	version, err := semver.NewVersion(strings.Split(variables["version"], " ")[0])
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return &Exporter{
-		sphinx: c,
+		sphinx:  c,
+		version: version,
 		up: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "", "up"),
 			"Could the searchd server be reached.",
@@ -595,20 +626,34 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	threads := make(map[string][]string)
 
 	for threads_rows.Next() {
-		var (
-			tid, name, proto, state, host, connID, time, workTime, workTimeCPU,
-			thdEfficiency, jobsDone, lastJobTook, inIdle, info string
-		)
+		if e.version.Major() >= 4 {
+			var (
+				tid, name, proto, state, host, connID, time, workTime, workTimeCPU,
+				thdEfficiency, jobsDone, lastJobTook, inIdle, info string
+			)
 
-		err = threads_rows.Scan(
-			&tid, &name, &proto, &state, &host, &connID, &time, &workTime, &workTimeCPU,
-			&thdEfficiency, &jobsDone, &lastJobTook, &inIdle, &info,
-		)
-		if err != nil {
-			log.Error(err)
-			return
+			err = threads_rows.Scan(
+				&tid, &name, &proto, &state, &host, &connID, &time, &workTime, &workTimeCPU,
+				&thdEfficiency, &jobsDone, &lastJobTook, &inIdle, &info,
+			)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			threads[state] = append(threads[state], tid)
+		} else {
+			var (
+				tid, proto, state, time, info string
+			)
+			err = threads_rows.Scan(
+				&tid, &proto, &state, &state, &time, &info,
+			)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			threads[state] = append(threads[state], tid)
 		}
-		threads[state] = append(threads[state], tid)
 	}
 
 	for threads_state, threads_times := range threads {
