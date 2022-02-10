@@ -104,9 +104,18 @@ func NewExporter(server string, port string, timeout time.Duration) *Exporter {
 		variables[variableName] = variableValue
 	}
 
-	version, err := semver.NewVersion(strings.Split(variables["version"], " ")[0])
-	if err != nil {
-		log.Fatal(err)
+	var version *semver.Version
+
+	if len(variables["version"]) == 0 {
+		version, err = semver.NewVersion("2.0")
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		version, err = semver.NewVersion(strings.Split(variables["version"], " ")[0])
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	return &Exporter{
@@ -646,7 +655,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 				tid, proto, state, time, info string
 			)
 			err = threads_rows.Scan(
-				&tid, &proto, &state, &state, &time, &info,
+				&tid, &proto, &state, &time, &info,
 			)
 			if err != nil {
 				log.Error(err)

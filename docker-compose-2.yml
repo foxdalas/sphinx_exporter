@@ -13,7 +13,7 @@ services:
   sphinx:
     container_name: sphinx
     build:
-      context: tests/sphinx-3
+      context: tests/sphinx-2
     ports:
       - "3306:3306"
 
