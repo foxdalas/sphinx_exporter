@@ -32,6 +32,14 @@ jobs:
     - name: Go build
       run: go build .
 
+
+    - uses: meeDamian/sync-readme@v1.0.6
+      with:
+        user: ${{ secrets.DOCKERHUB_USERNAME }}
+        pass: ${{ secrets.DOCKERHUB_PASSWORD }}
+        slug: foxdalas/sphinx-exporter
+        readme: ./README.md
+
 #  tests:
 #    needs: build
 #    runs-on: ubuntu-latest
