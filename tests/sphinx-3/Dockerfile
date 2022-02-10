@@ -10,6 +10,8 @@ RUN apk add --no-cache mariadb-connector-c-dev \
 	postgresql-dev \
 	wget
 
+ http://sphinxsearch.com/downloads/sphinx-2.3.2-beta.tar.gz/thankyou.html
+
 # set up and expose directories
 RUN mkdir -pv /opt/sphinx/log /opt/sphinx/index
 VOLUME /opt/sphinx/index
