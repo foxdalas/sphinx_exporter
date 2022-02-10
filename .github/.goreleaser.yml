@@ -7,6 +7,12 @@ release:
 builds:
   - id: sphinx-exporter
     binary: sphinx-exporter
+    ldflags:
+      - "-X github.com/prometheus/common/version.Version={{ .Version }}"
+      - "-X github.com/prometheus/common/version.BuildDate={{.Date}}"
+      - "-X github.com/prometheus/common/version.BuildUser=goreleaser"
+      - "-X github.com/prometheus/common/version.Revision={{.Commit}}"
+      - "-X github.com/prometheus/common/version.Branch={{.Branch}}"
     goos:
       - linux
     goarch:
