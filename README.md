@@ -1,8 +1,8 @@
 # Sphinx Exporter for Prometheus
 
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/foxdalas/sphinx_exporter/build-and-test/master?style=for-the-badge)
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/foxdalas/sphinx_exporter?style=for-the-badge)
-![Docker Pulls](https://img.shields.io/docker/pulls/foxdalas/sphinx-exporter?style=for-the-badge)
+[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/foxdalas/sphinx_exporter/build-and-test/master?style=for-the-badge)](https://github.com/foxdalas/sphinx_exporter/actions)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/foxdalas/sphinx_exporter?style=for-the-badge)](https://github.com/foxdalas/sphinx_exporter/releases)
+[![Docker Pulls](https://img.shields.io/docker/pulls/foxdalas/sphinx-exporter?style=for-the-badge)](https://hub.docker.com/repository/docker/foxdalas/sphinx-exporter)
 
 A [sphinx](http://sphinxsearch.com) exporter for prometheus.
 
@@ -14,7 +14,7 @@ A [sphinx](http://sphinxsearch.com) exporter for prometheus.
 ### Docker
 #### Specific version
 ```
-docker pull foxdalas/sphinx-exporter:v0.1.0
+docker pull foxdalas/sphinx-exporter:v0.1.4
 ```
 #### latest version
 ```
