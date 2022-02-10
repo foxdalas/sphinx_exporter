@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+#  exporter:
+#    container_name: exporter
+#    command:
+#      - "--sphinx.address=sphinx"
+#      - "--sphinx.port=3306"
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.compose
+#    ports:
+#      - "9247:9247"
+  sphinx:
+    container_name: sphinx
+    build:
+      context: tests/sphinx
+    ports:
+      - "3306:3306"
+
+
