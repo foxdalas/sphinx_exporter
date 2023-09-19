@@ -35,7 +35,7 @@ jobs:
 
     - uses: meeDamian/sync-readme@v1.0.6
       with:
-        user: ${{ secrets.DOCKERHUB_USERNAME }}
+        user: ${{ secrets.DOCKERHUB_TOKEN }}
         pass: ${{ secrets.DOCKERHUB_PASSWORD }}
         slug: foxdalas/sphinx-exporter
         readme: ./README.md
