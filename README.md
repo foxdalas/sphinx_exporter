@@ -14,7 +14,7 @@ A [sphinx](http://sphinxsearch.com) exporter for prometheus.
 ### Docker
 #### Specific version
 ```
-docker pull foxdalas/sphinx-exporter:v0.1.4
+docker pull foxdalas/sphinx-exporter:v0.3.0
 ```
 #### latest version
 ```
@@ -27,7 +27,7 @@ The sphinx exporter exports metrics from a sphinx server for
 consumption by prometheus. The server is specified as `--sphinx.address` and `--sphinx.port` flag
 to the program (default is `localhost:9306`).
 
-By default the sphinx\_exporter serves on port `0.0.0.0:9247` at `/metrics`
+By default the sphinx_exporter serves on port `0.0.0.0:9247` at `/metrics`
 
 ```
 make build
