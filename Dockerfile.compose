@@ -9,7 +9,7 @@ COPY . .
 RUN apk add alpine-sdk
 RUN go build .
 
-FROM alpine:3.19
+FROM alpine:3.20
 RUN apk --no-cache add ca-certificates
 COPY --from=build /app/sphinx_exporter /bin/
 EXPOSE     9247
